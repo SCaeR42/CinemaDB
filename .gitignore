@@ -1,0 +1,41 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# PHP / Composer
+/vendor/
+composer.phar
+.phpunit.result.cache
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDEs and editors
+.idea/
+.vscode/
+
+# Node
+node_modules/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build / cache
+dist/
+build/
+.cache/
+
+# Databases
+*.sqlite
+*.sqlite3
+
+# Misc
+thumbs.db
+*.swp
