@@ -16,6 +16,7 @@ composer.phar
 # IDEs and editors
 .idea/
 .vscode/
+.claude/
 
 # Node
 node_modules/
@@ -39,3 +40,4 @@ build/
 # Misc
 thumbs.db
 *.swp
+
