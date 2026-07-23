@@ -22,6 +22,9 @@ SELECT
         WHEN 'boolean' THEN IF(v.value_boolean, 'Да', 'Нет')
         WHEN 'date'    THEN DATE_FORMAT(v.value_date, '%d.%m.%Y')
         WHEN 'number'  THEN CAST(v.value_number AS CHAR)
+        -- float округляется перед отображением (ROUND) — наружу никогда не
+        -- выводим сырое двоичное значение с его случайным хвостом разрядов
+        WHEN 'float'   THEN CAST(ROUND(v.value_float, 1) AS CHAR)
     END AS value_display
 FROM attribute_values v
 JOIN movies m           ON m.movie_id = v.movie_id
@@ -56,7 +59,7 @@ GROUP BY m.movie_id, m.title;
 -- ---------------------------------------------------------------------
 -- Проверочный запрос: структурная целостность EAV.
 -- Находит строки attribute_values, где:
---   1) заполнено не ровно 1 из 4 типизированных значений (0 или >=2), или
+--   1) заполнено не ровно 1 из 5 типизированных значений (0 или >=2), или
 --   2) заполненная колонка не соответствует data_type атрибута.
 -- В корректно заполненной схеме запрос должен возвращать 0 строк.
 -- ---------------------------------------------------------------------
@@ -69,7 +72,8 @@ SELECT
     v.value_text,
     v.value_boolean,
     v.value_date,
-    v.value_number
+    v.value_number,
+    v.value_float
 FROM attribute_values v
 JOIN movies m           ON m.movie_id = v.movie_id
 JOIN attributes a       ON a.attribute_id = v.attribute_id
@@ -79,12 +83,28 @@ WHERE
         (v.value_text    IS NOT NULL) +
         (v.value_boolean IS NOT NULL) +
         (v.value_date    IS NOT NULL) +
-        (v.value_number  IS NOT NULL)
+        (v.value_number  IS NOT NULL) +
+        (v.value_float   IS NOT NULL)
     ) <> 1
     OR (at.data_type = 'text'    AND v.value_text    IS NULL)
     OR (at.data_type = 'boolean' AND v.value_boolean IS NULL)
     OR (at.data_type = 'date'    AND v.value_date    IS NULL)
-    OR (at.data_type = 'number'  AND v.value_number  IS NULL);
+    OR (at.data_type = 'number'  AND v.value_number  IS NULL)
+    OR (at.data_type = 'float'   AND v.value_float   IS NULL);
+
+-- ---------------------------------------------------------------------
+-- Демонстрация специфики float: сравнение "в лоб" на равенство ненадёжно,
+-- т.к. десятичные дроби (например, 7.1) не всегда имеют точное двоичное
+-- представление в IEEE 754. Корректный способ — сравнение с допуском
+-- (эпсилон) либо округление перед сравнением/отображением.
+-- ---------------------------------------------------------------------
+SELECT
+    value_float,
+    value_float = 7.1              AS equal_naive,      -- ненадёжно
+    ABS(value_float - 7.1) < 1e-4  AS equal_with_epsilon, -- надёжно
+    ROUND(value_float, 1)          AS rounded_for_display
+FROM attribute_values
+WHERE value_float IS NOT NULL;
 
 -- ---------------------------------------------------------------------
 -- Демонстрация: маркетинговая выгрузка по всем фильмам

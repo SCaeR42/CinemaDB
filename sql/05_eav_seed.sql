@@ -10,9 +10,10 @@ INSERT INTO attribute_types (code, name, data_type, is_marketing, description) V
     ('award',          'Премии',              'boolean', TRUE,  'Получена ли премия; при печати заменяется изображением'),
     ('important_date', 'Важные даты',         'date',    TRUE,  'Даты, важные для зрителя (премьеры и т.п.)'),
     ('service_date',   'Служебные даты',      'date',    FALSE, 'Даты для внутреннего планирования, не для печати'),
-    ('metric',         'Числовые показатели', 'number',  TRUE,  'Рейтинги, кассовые сборы и другие числовые метрики');
+    ('metric',         'Числовые показатели', 'number',  TRUE,  'Точные числовые показатели: официальный рейтинг, кассовые сборы — округление недопустимо'),
+    ('rating',         'Средние оценки',      'float',   TRUE,  'Агрегированные/вычисляемые приближённые величины (среднее по множеству пользовательских оценок) — точность IEEE754 ожидаема и достаточна');
 
--- attribute_type_id: 1=review, 2=award, 3=important_date, 4=service_date, 5=metric
+-- attribute_type_id: 1=review, 2=award, 3=important_date, 4=service_date, 5=metric, 6=rating
 INSERT INTO attributes (attribute_type_id, name) VALUES
     (1, 'Рецензия критика Романа Волобуева'),          -- attribute_id 1
     (1, 'Отзыв неизвестной киноакадемии'),             -- attribute_id 2
@@ -25,7 +26,8 @@ INSERT INTO attributes (attribute_type_id, name) VALUES
     (4, 'Запуск рекламы на ТВ'),                       -- attribute_id 9
     (4, 'Дедлайн поставки постеров в залы'),           -- attribute_id 10
     (5, 'Рейтинг критиков (IMDb)'),                    -- attribute_id 11
-    (5, 'Кассовые сборы, млн $');                      -- attribute_id 12
+    (5, 'Кассовые сборы, млн $'),                      -- attribute_id 12
+    (6, 'Средняя пользовательская оценка');            -- attribute_id 13
 
 -- Фильм 1: «Начало» (movie_id = 1)
 INSERT INTO attribute_values (movie_id, attribute_id, value_text) VALUES
@@ -41,6 +43,10 @@ INSERT INTO attribute_values (movie_id, attribute_id, value_date) VALUES
 INSERT INTO attribute_values (movie_id, attribute_id, value_number) VALUES
     (1, 11, 8.800),
     (1, 12, 836.848);
+-- 7.1 намеренно взято как классический пример: не имеет точного двоичного
+-- представления в IEEE 754 (см. демонстрацию специфики float в 06_eav_queries.sql)
+INSERT INTO attribute_values (movie_id, attribute_id, value_float) VALUES
+    (1, 13, 7.1);
 
 -- Фильм 2: «Смешные истории» (movie_id = 2)
 INSERT INTO attribute_values (movie_id, attribute_id, value_text) VALUES
@@ -53,6 +59,8 @@ INSERT INTO attribute_values (movie_id, attribute_id, value_date) VALUES
     (2, 10, CURDATE());                      -- Дедлайн поставки постеров (сегодня)
 INSERT INTO attribute_values (movie_id, attribute_id, value_number) VALUES
     (2, 11, 6.500);
+INSERT INTO attribute_values (movie_id, attribute_id, value_float) VALUES
+    (2, 13, 6.3);
 
 -- Фильм 3: «Космический рубеж» (movie_id = 3)
 INSERT INTO attribute_values (movie_id, attribute_id, value_text) VALUES
@@ -64,3 +72,5 @@ INSERT INTO attribute_values (movie_id, attribute_id, value_date) VALUES
     (3, 9, CURDATE());      -- Запуск рекламы на ТВ (сегодня)
 INSERT INTO attribute_values (movie_id, attribute_id, value_number) VALUES
     (3, 12, 412.300);
+INSERT INTO attribute_values (movie_id, attribute_id, value_float) VALUES
+    (3, 13, 7.8);

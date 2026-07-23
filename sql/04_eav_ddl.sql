@@ -14,7 +14,7 @@ CREATE TABLE attribute_types (
     attribute_type_id  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code                VARCHAR(30)  NOT NULL UNIQUE,
     name                VARCHAR(100) NOT NULL,
-    data_type           ENUM('text', 'boolean', 'date', 'number') NOT NULL,
+    data_type           ENUM('text', 'boolean', 'date', 'number', 'float') NOT NULL,
     is_marketing        BOOLEAN NOT NULL DEFAULT TRUE,
     description         VARCHAR(255)
 ) ENGINE=InnoDB;
@@ -35,13 +35,25 @@ CREATE TABLE attributes (
 
 -- ---------------------------------------------------------------------
 -- Значения атрибутов: одна строка = одно значение одного атрибута
--- у одного фильма. Заполнена ровно одна из 4 типизированных колонок —
+-- у одного фильма. Заполнена ровно одна из 5 типизированных колонок —
 -- та, что соответствует data_type атрибута (см. 06_eav_queries.sql —
 -- проверочный запрос на структурную целостность).
 --
--- value_number — DECIMAL(12,3), а не FLOAT/DOUBLE: числа с плавающей
--- точкой в двоичном виде дают ошибки округления и неточные сравнения,
--- что критично для рейтингов и денежных показателей (кассовые сборы).
+-- Два разных числовых типа — сознательно, каждый под свою специфику:
+--   value_number (DECIMAL(12,3)) — точная десятичная арифметика для
+--     значений, где округление недопустимо (деньги — кассовые сборы,
+--     официально публикуемый рейтинг): DECIMAL хранит число как точное
+--     десятичное значение, без ошибок округления и без сюрпризов при
+--     сравнении на равенство.
+--   value_float (FLOAT) — двоичная плавающая точка IEEE 754, для
+--     агрегированных/вычисляемых приближённых величин (например, средняя
+--     пользовательская оценка, посчитанная по множеству голосов), где
+--     сама природа значения уже приближённая, а не точная. Специфика
+--     использования: сравнивать через допуск (ABS(a-b) < ε), а не «=»;
+--     округлять при отображении (ROUND()), не выводить сырое значение;
+--     не суммировать много таких значений без осознания накапливаемой
+--     погрешности. См. демонстрацию в 06_eav_queries.sql и обоснование
+--     выбора между DECIMAL/FLOAT в docs/eav-model.md, раздел 4.
 -- ---------------------------------------------------------------------
 CREATE TABLE attribute_values (
     value_id       BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -51,6 +63,7 @@ CREATE TABLE attribute_values (
     value_boolean  BOOLEAN,
     value_date     DATE,
     value_number   DECIMAL(12,3),
+    value_float    FLOAT,
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_values_movie
         FOREIGN KEY (movie_id) REFERENCES movies (movie_id)
